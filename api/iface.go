@@ -1,4 +1,5 @@
 package api
 
-type OpenAIAPIIface struct {
+type OpenAIAPIIface interface {
+	ListModelsV1() (*ListModelsV1Output, error)
 }
