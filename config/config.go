@@ -3,5 +3,5 @@ package config
 type Configuration struct {
 	ApiKey       *string
 	Organization *string
-	Endpoint     *string //default: api.openai.com
+	Endpoint     *string //default: https://api.openai.com
 }
