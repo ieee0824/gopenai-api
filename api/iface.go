@@ -1,5 +1,5 @@
 package api
 
 type OpenAIAPIIface interface {
-	ListModelsV1() (*ListModelsV1Output, error)
+	ListModelsV1(*ListModelsV1Input) (*ListModelsV1Output, error)
 }
