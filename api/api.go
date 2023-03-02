@@ -12,6 +12,7 @@ type OpenAIAPI struct {
 }
 
 func New(cfg *config.Configuration) *OpenAIAPI {
+
 	return &OpenAIAPI{
 		httpClient:    http.DefaultClient,
 		configuration: cfg,
