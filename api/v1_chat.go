@@ -125,6 +125,4 @@ func (api *OpenAIAPI) ChatCompletionsV1(input *ChatCompletionsV1Input) (*ChatCom
 		}
 		return ret, ErrUnknown
 	}
-
-	return nil, nil
 }
