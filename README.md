@@ -1,5 +1,11 @@
 # gopenai-api
 
+### install
+```shell
+go get github.com/ieee0824/gopenai-api
+```
+
+### sample
 ```Go
 package main
 
