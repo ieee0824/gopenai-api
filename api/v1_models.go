@@ -44,7 +44,9 @@ func (impl *ListModelsV1Output) String() string {
 	return buf.String()
 }
 
-func (api *OpenAIAPI) ListModelsV1() (*ListModelsV1Output, error) {
+type ListModelsV1Input struct{}
+
+func (api *OpenAIAPI) ListModelsV1(*ListModelsV1Input) (*ListModelsV1Output, error) {
 	endpoint, err := api.endpoint()
 	if err != nil {
 		return nil, err
