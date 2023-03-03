@@ -38,9 +38,33 @@ func (impl *AudioTranscriptionsV1Input) validate() error {
 	return nil
 }
 
+type AudioTranscriptionsV1Segments struct {
+	ID               int     `json:"id,omitempty"`
+	Seek             float32 `json:"seek,omitempty"`
+	Start            float32 `json:"start,omitempty"`
+	End              float32 `json:"end,omitempty"`
+	Text             string  `json:"text,omitempty"`
+	Tokens           []int   `json:"tokens,omitempty"`
+	Temperature      float32 `json:"temperature,omitempty"`
+	AvgLogprob       float64 `json:"avg_logprob,omitempty"`
+	CompressionRatio float64 `json:"compression_ratio,omitempty"`
+	NoSpeechProb     float64 `json:"no_speech_prob,omitempty"`
+	Transient        bool    `json:"transient,omitempty"`
+}
+
 type AudioTranscriptionsV1Output struct {
-	Text  string `json:"text,omitempty"`
-	Error *Error `json:"error,omitempty"`
+	Task     *string                         `json:"task,omitempty"`
+	Language *string                         `json:"language,omitempty"`
+	Duration *float64                        `json:"duration,omitempty"`
+	Segments []AudioTranscriptionsV1Segments `json:"segments,omitempty"`
+	Text     *string                         `json:"text,omitempty"`
+	Error    *Error                          `json:"error,omitempty"`
+}
+
+func (impl *AudioTranscriptionsV1Output) GoString() string {
+	buf := new(bytes.Buffer)
+	json.NewEncoder(buf).Encode(impl)
+	return buf.String()
 }
 
 func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (*AudioTranscriptionsV1Output, error) {
@@ -67,8 +91,20 @@ func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (
 	if err := writeField("temperature", writer, input.Temperature); err != nil {
 		return nil, err
 	}
-	if err := writeField("response_format", writer, input.ResponseFormat); err != nil {
-		return nil, err
+
+	if input.ResponseFormat == nil {
+		if err := writer.WriteField("response_format", "verbose_json"); err != nil {
+			return nil, err
+		}
+	} else {
+		switch *input.ResponseFormat {
+		case "json", "verbose_json":
+			if err := writer.WriteField("response_format", *input.ResponseFormat); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unsupport format: %s", *input.ResponseFormat)
+		}
 	}
 	if err := writeField("prompt", writer, input.Prompt); err != nil {
 		return nil, err
@@ -94,6 +130,7 @@ func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (
 		return nil, err
 	}
 	resp, err := api.httpClient.Do(req)
+
 	if err != nil {
 		return nil, err
 	}
