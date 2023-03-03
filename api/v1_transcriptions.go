@@ -104,7 +104,7 @@ func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (
 		if err := json.NewDecoder(resp.Body).Decode(ret); err != nil {
 			return nil, err
 		}
-		return nil, err
+		return ret, nil
 	case http.StatusUnauthorized:
 		ret := &AudioTranscriptionsV1Output{}
 		if err := json.NewDecoder(resp.Body).Decode(ret); err != nil {
