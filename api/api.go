@@ -14,7 +14,7 @@ type OpenAIAPI struct {
 	configuration *config.Configuration
 }
 
-func New(cfg *config.Configuration) *OpenAIAPI {
+func New(cfg *config.Configuration) OpenAIAPIIface {
 
 	return &OpenAIAPI{
 		httpClient:    http.DefaultClient,
