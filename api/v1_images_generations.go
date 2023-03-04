@@ -52,6 +52,7 @@ func (api *OpenAIAPI) ImagesGenerationsV1(input *ImagesGenerationsV1Input) (*Ima
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type ", "application/json")
 	if err := api.setToken(req); err != nil {
 		return nil, err
 	}
