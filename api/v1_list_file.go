@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"golang.org/x/xerrors"
 )
 
 type ListFileV1Input struct{}
@@ -66,6 +68,7 @@ func (api *OpenAIAPI) ListFileV1(input *ListFileV1Input) (*ListFileV1Output, err
 				Message: buf.String(),
 			},
 		}
-		return ret, ErrUnknown
+
+		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
 }

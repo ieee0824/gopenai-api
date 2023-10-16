@@ -3,13 +3,14 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/xerrors"
 )
 
 func writeField[T any](fieldName string, w *multipart.Writer, v *T) error {
@@ -31,9 +32,9 @@ type AudioTranscriptionsV1Input struct {
 
 func (impl *AudioTranscriptionsV1Input) validate() error {
 	if impl.File == nil {
-		return errors.New("no file")
+		return xerrors.New("no file")
 	} else if impl.Model == nil {
-		return errors.New("no models")
+		return xerrors.New("no models")
 	}
 	return nil
 }
@@ -103,7 +104,7 @@ func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (
 				return nil, err
 			}
 		default:
-			return nil, fmt.Errorf("unsupport format: %s", *input.ResponseFormat)
+			return nil, xerrors.Errorf("unsupport format: %s", *input.ResponseFormat)
 		}
 	}
 	if err := writeField("prompt", writer, input.Prompt); err != nil {
@@ -156,6 +157,6 @@ func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (
 				Message: buf.String(),
 			},
 		}
-		return ret, fmt.Errorf("%w: msg=%s", ErrUnknown, buf.String())
+		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
 }

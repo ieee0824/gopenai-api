@@ -3,9 +3,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
+
+	"golang.org/x/xerrors"
 )
 
 type Message struct {
@@ -30,10 +31,10 @@ type ChatCompletionsV1Input struct {
 
 func (input *ChatCompletionsV1Input) Validate() error {
 	if input.Model == nil {
-		return errors.New("model is empty")
+		return xerrors.New("model is empty")
 	}
 	if len(input.Messages) == 0 {
-		return errors.New("messages is empty")
+		return xerrors.New("messages is empty")
 	}
 	return nil
 }
@@ -123,6 +124,7 @@ func (api *OpenAIAPI) ChatCompletionsV1(input *ChatCompletionsV1Input) (*ChatCom
 				Message: buf.String(),
 			},
 		}
-		return ret, ErrUnknown
+
+		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
 }
