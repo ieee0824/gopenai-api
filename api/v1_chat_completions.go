@@ -78,6 +78,7 @@ type ChatCompletionsV1Output struct {
 	Error *Error `json:"error,omitempty"`
 }
 
+// parse function calling arguments
 func (impl *ChatCompletionsV1Output) ParseArguments(funcName string, v any) error {
 	functionCalls := lo.Map(impl.Choices, func(c ChatCompletionsV1OutputChoice, _ int) *ChatCompletionsV1OutputChoiceFunctionCall {
 		return c.Message.FunctionCall
