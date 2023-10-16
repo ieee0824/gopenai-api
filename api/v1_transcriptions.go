@@ -157,6 +157,6 @@ func (api *OpenAIAPI) AudioTranscriptionsV1(input *AudioTranscriptionsV1Input) (
 				Message: buf.String(),
 			},
 		}
-		return ret, xerrors.Errorf("%w: msg=%s", ErrUnknown, buf.String())
+		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
 }

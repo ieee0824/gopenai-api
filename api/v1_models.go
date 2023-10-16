@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"golang.org/x/xerrors"
 )
 
 type ListModelsV1Permission struct {
@@ -88,6 +90,7 @@ func (api *OpenAIAPI) ListModelsV1(*ListModelsV1Input) (*ListModelsV1Output, err
 				Message: buf.String(),
 			},
 		}
-		return ret, ErrUnknown
+
+		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
 }

@@ -124,6 +124,7 @@ func (api *OpenAIAPI) ChatCompletionsV1(input *ChatCompletionsV1Input) (*ChatCom
 				Message: buf.String(),
 			},
 		}
-		return ret, ErrUnknown
+
+		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
 }
