@@ -1,9 +1,11 @@
 package api
 
-import "errors"
+import (
+	"golang.org/x/xerrors"
+)
 
-var ErrUnauthorized = errors.New("Unauthorized")
-var ErrUnknown = errors.New("Unkonown")
+var ErrUnauthorized = xerrors.New("Unauthorized")
+var ErrUnknown = xerrors.New("Unkonown")
 
 type Error struct {
 	Message string `json:"message"`

@@ -3,9 +3,10 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
+
+	"golang.org/x/xerrors"
 )
 
 type ImagesGenerationsV1Input struct {
@@ -18,7 +19,7 @@ type ImagesGenerationsV1Input struct {
 
 func (impl *ImagesGenerationsV1Input) validate() error {
 	if impl.Prompt == nil {
-		return errors.New("no prompt")
+		return xerrors.New("no prompt")
 	}
 	return nil
 }
