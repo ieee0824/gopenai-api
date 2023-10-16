@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/danielgtaylor/huma/schema"
+	"github.com/samber/lo"
 	"golang.org/x/xerrors"
 )
 
@@ -55,14 +55,6 @@ type ChatCompletionsV1OutputChoiceFunctionCall struct {
 	Arguments string `json:"arguments,omitempty"`
 }
 
-func (c *ChatCompletionsV1OutputChoiceFunctionCall) ParseArguments(v any) error {
-	err := json.NewDecoder(strings.NewReader(c.Arguments)).Decode(v)
-	if err != nil {
-		return xerrors.Errorf("failed to decode arguments: %w", err)
-	}
-	return nil
-}
-
 type ChatCompletionsV1OutputChoiceMessage struct {
 	Role         string                                     `json:"role,omitempty"`
 	Content      *string                                    `json:"content,omitempty"`
@@ -84,6 +76,23 @@ type ChatCompletionsV1Output struct {
 	Choices []ChatCompletionsV1OutputChoice `json:"choices,omitempty"`
 
 	Error *Error `json:"error,omitempty"`
+}
+
+func (impl *ChatCompletionsV1Output) ParseArguments(funcName string, v any) error {
+	functionCalls := lo.Map(impl.Choices, func(c ChatCompletionsV1OutputChoice, _ int) *ChatCompletionsV1OutputChoiceFunctionCall {
+		return c.Message.FunctionCall
+	})
+
+	for _, fc := range functionCalls {
+		if fc.Name != funcName {
+			continue
+		}
+		if err := json.Unmarshal([]byte(fc.Arguments), v); err != nil {
+			return err
+		}
+		return nil
+	}
+	return xerrors.Errorf("function name: %s is not found", funcName)
 }
 
 func (impl *ChatCompletionsV1Output) String() string {
