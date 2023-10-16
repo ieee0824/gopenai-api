@@ -56,9 +56,11 @@ func main() {
 	org := "org-id"
 	const funcName = "weather"
 
+	// generate function call function
 	mf, err := api.NewFunction(
 		funcName,
 		"",
+		// If you specify a response structure, it will dynamically generate an openai request.
 		weatherAPIReq{},
 	)
 	if err != nil {
