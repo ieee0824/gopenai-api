@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"reflect"
+	"strings"
 
+	"github.com/danielgtaylor/huma/schema"
 	"golang.org/x/xerrors"
 )
 
@@ -16,17 +19,19 @@ type Message struct {
 
 // doc: https://platform.openai.com/docs/api-reference/chat
 type ChatCompletionsV1Input struct {
-	Model            *string   `json:"model,omitempty"`
-	Messages         []Message `json:"messages,omitempty"`
-	Temperature      *float32  `json:"temperature,omitempty"`
-	TopP             *float32  `json:"top_p,omitempty"`
-	N                int       `json:"n,omitempty"`
-	Stop             []string  `json:"stop,omitempty"`
-	MaxTokens        *int      `json:"max_tokens,omitempty"`
-	PresencePenalty  *float32  `json:"presence_penalty,omitempty"`
-	FrequencyPenalty *float32  `json:"frequency_penalty,omitempty"`
-	LogitBias        any       `json:"logit_bias,omitempty"`
-	User             *string   `json:"user,omitempty"`
+	Model            *string     `json:"model,omitempty"`
+	Messages         []Message   `json:"messages,omitempty"`
+	Functions        []*Function `json:"functions,omitempty"`
+	Temperature      *float32    `json:"temperature,omitempty"`
+	TopP             *float32    `json:"top_p,omitempty"`
+	N                int         `json:"n,omitempty"`
+	Stop             []string    `json:"stop,omitempty"`
+	MaxTokens        *int        `json:"max_tokens,omitempty"`
+	PresencePenalty  *float32    `json:"presence_penalty,omitempty"`
+	FrequencyPenalty *float32    `json:"frequency_penalty,omitempty"`
+	LogitBias        any         `json:"logit_bias,omitempty"`
+	User             *string     `json:"user,omitempty"`
+	FunctionCall     *string     `json:"function_call,omitempty"`
 }
 
 func (input *ChatCompletionsV1Input) Validate() error {
@@ -45,9 +50,23 @@ type ChatCompletionsV1OutputUsage struct {
 	TotalTokens      int `json:"total_tokens,omitempty"`
 }
 
+type ChatCompletionsV1OutputChoiceFunctionCall struct {
+	Name      string `json:"name,omitempty"`
+	Arguments string `json:"arguments,omitempty"`
+}
+
+func (c *ChatCompletionsV1OutputChoiceFunctionCall) ParseArguments(v any) error {
+	err := json.NewDecoder(strings.NewReader(c.Arguments)).Decode(v)
+	if err != nil {
+		return xerrors.Errorf("failed to decode arguments: %w", err)
+	}
+	return nil
+}
+
 type ChatCompletionsV1OutputChoiceMessage struct {
-	Role    string `json:"role,omitempty"`
-	Content string `json:"content,omitempty"`
+	Role         string                                     `json:"role,omitempty"`
+	Content      *string                                    `json:"content,omitempty"`
+	FunctionCall *ChatCompletionsV1OutputChoiceFunctionCall `json:"function_call,omitempty"`
 }
 
 type ChatCompletionsV1OutputChoice struct {
@@ -127,4 +146,34 @@ func (api *OpenAIAPI) ChatCompletionsV1(input *ChatCompletionsV1Input) (*ChatCom
 
 		return ret, xerrors.Errorf("status_code: %d, msg: %s, error: %w", resp.StatusCode, buf.String(), ErrUnknown)
 	}
+}
+
+// generate function_calling function
+// Input the functionName, description, and return value type of the function as arguments.
+// example:
+//
+//	type funcResult struct {
+//	    Foo string `json:"foo"`
+//	    Bar int    `json:"bar"`
+//	    Baz bool   `json:"baz"`
+//	}
+//
+// NewFunction("funcName", "description", funcResult{})
+func NewFunction(funcName, description string, v any) (*Function, error) {
+	parameters, err := schema.Generate(reflect.TypeOf(v))
+	if err != nil {
+		return nil, xerrors.Errorf("failed to generate schema: %w", err)
+	}
+	return &Function{
+		Name:        funcName,
+		Description: description,
+		Paramaters:  parameters,
+	}, nil
+
+}
+
+type Function struct {
+	Name        string         `json:"name"`
+	Description string         `json:"description"`
+	Paramaters  *schema.Schema `json:"parameters"`
 }
