@@ -6,6 +6,7 @@ import (
 
 var ErrUnauthorized = xerrors.New("Unauthorized")
 var ErrUnknown = xerrors.New("Unkonown")
+var ErrStatusBadGateway = xerrors.New("Bad Gateway")
 
 type Error struct {
 	Message string `json:"message"`

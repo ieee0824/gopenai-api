@@ -59,6 +59,15 @@ func (api *OpenAIAPI) ListFileV1(input *ListFileV1Input) (*ListFileV1Output, err
 			return nil, err
 		}
 		return ret, ErrUnauthorized
+	case http.StatusBadGateway:
+		buf := new(bytes.Buffer)
+		io.Copy(buf, resp.Body)
+		ret := &ListFileV1Output{
+			Error: &Error{
+				Message: buf.String(),
+			},
+		}
+		return ret, xerrors.Errorf("msg: %s, error: %w", buf.String(), ErrStatusBadGateway)
 	default:
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)

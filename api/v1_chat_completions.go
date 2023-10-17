@@ -145,6 +145,15 @@ func (api *OpenAIAPI) ChatCompletionsV1(input *ChatCompletionsV1Input) (*ChatCom
 			return nil, err
 		}
 		return ret, ErrUnauthorized
+	case http.StatusBadGateway:
+		buf := new(bytes.Buffer)
+		io.Copy(buf, resp.Body)
+		ret := &ChatCompletionsV1Output{
+			Error: &Error{
+				Message: buf.String(),
+			},
+		}
+		return ret, xerrors.Errorf("msg: %s, error: %w", buf.String(), ErrStatusBadGateway)
 	default:
 		buf := new(bytes.Buffer)
 		io.Copy(buf, resp.Body)
