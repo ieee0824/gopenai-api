@@ -80,8 +80,13 @@ type ChatCompletionsV1Output struct {
 
 // parse function calling arguments
 func (impl *ChatCompletionsV1Output) ParseArguments(funcName string, v any) error {
-	functionCalls := lo.Map(impl.Choices, func(c ChatCompletionsV1OutputChoice, _ int) *ChatCompletionsV1OutputChoiceFunctionCall {
+	if impl.Choices == nil {
+		return xerrors.Errorf("choices is nil: %w", ErrParseFunctionCallingArguments)
+	}
+	functionCalls := lo.Filter(lo.Map(impl.Choices, func(c ChatCompletionsV1OutputChoice, _ int) *ChatCompletionsV1OutputChoiceFunctionCall {
 		return c.Message.FunctionCall
+	}), func(fc *ChatCompletionsV1OutputChoiceFunctionCall, _ int) bool {
+		return fc != nil
 	})
 
 	for _, fc := range functionCalls {
@@ -93,7 +98,7 @@ func (impl *ChatCompletionsV1Output) ParseArguments(funcName string, v any) erro
 		}
 		return nil
 	}
-	return xerrors.Errorf("function name: %s is not found", funcName)
+	return xerrors.Errorf("function name: %s is not found: %w", funcName, ErrParseFunctionCallingArguments)
 }
 
 func (impl *ChatCompletionsV1Output) String() string {
