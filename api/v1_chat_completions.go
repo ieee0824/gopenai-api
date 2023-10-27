@@ -31,7 +31,7 @@ type ChatCompletionsV1Input struct {
 	FrequencyPenalty *float32    `json:"frequency_penalty,omitempty"`
 	LogitBias        any         `json:"logit_bias,omitempty"`
 	User             *string     `json:"user,omitempty"`
-	FunctionCall     *string     `json:"function_call,omitempty"`
+	FunctionCall     any         `json:"function_call,omitempty"`
 }
 
 func (input *ChatCompletionsV1Input) Validate() error {
