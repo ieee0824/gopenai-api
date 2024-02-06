@@ -66,12 +66,24 @@ type ChatCompletionsV1OutputChoiceMessage struct {
 	Role         string                                     `json:"role,omitempty"`
 	Content      *string                                    `json:"content,omitempty"`
 	FunctionCall *ChatCompletionsV1OutputChoiceFunctionCall `json:"function_call,omitempty"`
+	ToolCalls    []ChatCompletionsV1OutputToolCall          `json:"tool_calls,omitempty"`
 }
 
 type ChatCompletionsV1OutputChoice struct {
 	Message      ChatCompletionsV1OutputChoiceMessage `json:"message,omitempty"`
 	FinishReason string                               `json:"finish_reason,omitempty"`
 	Index        int                                  `json:"index,omitempty"`
+}
+
+type ChatCompletionsV1OutputToolCallFunction struct {
+	Name      string `json:"name,omitempty"`
+	Arguments string `json:"arguments,omitempty"`
+}
+
+type ChatCompletionsV1OutputToolCall struct {
+	ID       string                                   `json:"id,omitempty"`
+	Type     string                                   `json:"type,omitempty"`
+	Function *ChatCompletionsV1OutputToolCallFunction `json:"function,omitempty"`
 }
 
 type ChatCompletionsV1Output struct {
@@ -81,8 +93,33 @@ type ChatCompletionsV1Output struct {
 	Model   *string                         `json:"model,omitempty"`
 	Usage   *ChatCompletionsV1OutputUsage   `json:"usage,omitempty"`
 	Choices []ChatCompletionsV1OutputChoice `json:"choices,omitempty"`
+	Error   *Error                          `json:"error,omitempty"`
+}
 
-	Error *Error `json:"error,omitempty"`
+func (impl *ChatCompletionsV1Output) parseArgumentsFromFunctionCalls(funcName string, functionCalls []*ChatCompletionsV1OutputChoiceFunctionCall, v any) error {
+	for _, fc := range functionCalls {
+		if fc.Name != funcName {
+			continue
+		}
+		if err := json.Unmarshal([]byte(fc.Arguments), v); err != nil {
+			return err
+		}
+		return nil
+	}
+	return xerrors.Errorf("function name: %s is not found: %w", funcName, ErrParseFunctionCallingArguments)
+}
+
+func (impl *ChatCompletionsV1Output) parseArgumentsFromToolCalls(funcName string, toolCalls []ChatCompletionsV1OutputToolCall, v any) error {
+	for _, tc := range toolCalls {
+		if tc.Function.Name != funcName {
+			continue
+		}
+		if err := json.Unmarshal([]byte(tc.Function.Arguments), v); err != nil {
+			return err
+		}
+		return nil
+	}
+	return xerrors.Errorf("function name: %s is not found: %w", funcName, ErrParseFunctionCallingArguments)
 }
 
 // parse function calling arguments
@@ -95,15 +132,20 @@ func (impl *ChatCompletionsV1Output) ParseArguments(funcName string, v any) erro
 	}), func(fc *ChatCompletionsV1OutputChoiceFunctionCall, _ int) bool {
 		return fc != nil
 	})
+	if len(functionCalls) != 0 {
+		return impl.parseArgumentsFromFunctionCalls(funcName, functionCalls, v)
+	}
 
-	for _, fc := range functionCalls {
-		if fc.Name != funcName {
-			continue
+	toolCalls := lo.Filter(lo.Map(impl.Choices, func(c ChatCompletionsV1OutputChoice, _ int) []ChatCompletionsV1OutputToolCall {
+		return c.Message.ToolCalls
+	}), func(tc []ChatCompletionsV1OutputToolCall, _ int) bool {
+		return len(tc) != 0
+	})
+
+	for _, tc := range toolCalls {
+		if err := impl.parseArgumentsFromToolCalls(funcName, tc, v); err == nil {
+			return nil
 		}
-		if err := json.Unmarshal([]byte(fc.Arguments), v); err != nil {
-			return err
-		}
-		return nil
 	}
 	return xerrors.Errorf("function name: %s is not found: %w", funcName, ErrParseFunctionCallingArguments)
 }
