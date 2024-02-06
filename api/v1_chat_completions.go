@@ -17,11 +17,16 @@ type Message struct {
 	Content string `json:"content,omitempty"`
 }
 
+type Tool struct {
+	Type     string    `json:"type,omitempty"`
+	Function *Function `json:"function,omitempty"`
+}
+
 // doc: https://platform.openai.com/docs/api-reference/chat
 type ChatCompletionsV1Input struct {
 	Model            *string     `json:"model,omitempty"`
 	Messages         []Message   `json:"messages,omitempty"`
-	Functions        []*Function `json:"functions,omitempty"`
+	Functions        []*Function `json:"functions,omitempty"` // Deprecated
 	Temperature      *float32    `json:"temperature,omitempty"`
 	TopP             *float32    `json:"top_p,omitempty"`
 	N                int         `json:"n,omitempty"`
@@ -31,7 +36,9 @@ type ChatCompletionsV1Input struct {
 	FrequencyPenalty *float32    `json:"frequency_penalty,omitempty"`
 	LogitBias        any         `json:"logit_bias,omitempty"`
 	User             *string     `json:"user,omitempty"`
-	FunctionCall     any         `json:"function_call,omitempty"`
+	FunctionCall     any         `json:"function_call,omitempty"` // Deprecated
+	Tools            []*Tool     `json:"tools,omitempty"`
+	ToolChoice       any         `json:"tool_choice,omitempty"`
 }
 
 func (input *ChatCompletionsV1Input) Validate() error {
